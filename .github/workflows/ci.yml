@@ -23,8 +23,10 @@ on:
     branches: [main, develop]
 
 env:
-  # Flip to "true" locally/manually if you ever want a real-API smoke run.
   USE_MOCK_LLM: "true"
+  JWT_SECRET_KEY: "test-secret-key-for-ci-only"
+  DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
+  PYTHONPATH: ./backend
 
 jobs:
   # ---------------------------------------------------------------------
@@ -132,7 +134,9 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         working-directory: ./backend
-        run: pip install -r requirements.txt
+        run: |
+	  pip install -r requirements.txt
+	  pip install fastembed pypdf httpx2
       - name: Run migrations
         working-directory: ./backend
         env:
@@ -142,6 +146,7 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
+	  JWT_SECRET_KEY: "test-secret-key-for-ci-only"
         run: pytest tests/ -k "upload or extraction or chunking" -v
 
   # ---------------------------------------------------------------------
