@@ -7,3 +7,4 @@ alembic
 python-multipart
 pydantic-settings
 pytest
+PyJWT
