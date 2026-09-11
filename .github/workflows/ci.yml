@@ -277,7 +277,8 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
-        run: python scripts/seed_test_data.py
+          PYTHONPATH: .
+        run: python -m scripts.seed_test_data
       - name: Run end-to-end smoke test (representative question set, mocked LLM)
         working-directory: ./backend
         env:
