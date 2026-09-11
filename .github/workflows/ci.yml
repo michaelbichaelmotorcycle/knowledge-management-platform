@@ -27,6 +27,7 @@ env:
   JWT_SECRET_KEY: "test-secret-key-for-ci-only"
   DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
   PYTHONPATH: ./backend
+  GEMINI_API_KEY: "fake-api-key-for-ci-collection-only"
 
 jobs:
   # ---------------------------------------------------------------------

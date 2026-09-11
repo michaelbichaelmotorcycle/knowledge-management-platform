@@ -9,3 +9,11 @@ pydantic-settings
 pytest
 PyJWT
 pwdlib[argon2]
+fastembed
+pypdf
+httpx2
+google-genai
+fastembed
+pypdf
+httpx2
+google-genai
