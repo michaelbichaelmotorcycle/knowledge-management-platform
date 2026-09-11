@@ -6,6 +6,7 @@ from app.main import app
 from app.models.user import User
 from app.services.auth import get_current_user, get_db
 
+
 def test_upload_txt_file_successfully():
     mock_db = MagicMock()
     mock_user = User(
