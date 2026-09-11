@@ -142,7 +142,7 @@ ingestion:
       working-directory: ./backend
       env:
         DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
-      run: pytest tests/test_upload.py tests/test_extraction.py tests/test_chunking.py -v
+      run: pytest tests/ -k "upload or extraction or chunking" -v
 
   # ---------------------------------------------------------------------
   # 4. Embedding + storage tests
