@@ -5,17 +5,17 @@ Revises: fd4969cd9550
 Create Date: 2026-09-02 14:08:47.885090
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
+
+import pgvector
 
 from alembic import op
-import sqlalchemy as sa
-import pgvector
 
 # revision identifiers, used by Alembic.
 revision: str = 'b79ee6c8ae25'
-down_revision: Union[str, Sequence[str], None] = 'fd4969cd9550'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = 'fd4969cd9550'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

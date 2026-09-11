@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, Text, ForeignKey
 from pgvector.sqlalchemy import Vector
+from sqlalchemy import Column, ForeignKey, Integer, Text
 
 from app.db.database import Base
 

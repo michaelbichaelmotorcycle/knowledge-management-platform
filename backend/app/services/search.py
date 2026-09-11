@@ -5,7 +5,6 @@ from app.models.document import Document
 from app.models.user import User
 from app.services.embedding import generate_embeddings
 
-
 MAX_DISTANCE = 0.70
 
 

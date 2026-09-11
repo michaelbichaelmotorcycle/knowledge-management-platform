@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
 from app.models.user import User
-
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
@@ -78,7 +77,7 @@ def create_access_token(
     role: str,
 ) -> str:
     expire = (
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
         + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 

@@ -2,27 +2,26 @@ from fastapi import (
     APIRouter,
     Depends,
     File,
-    UploadFile,
     HTTPException,
+    UploadFile,
 )
 from sqlalchemy.orm import Session
 
 from app.models.chunk import DocumentChunk
 from app.models.document import Document
 from app.models.user import User
-from app.services.chunking import chunk_text
-from app.services.embedding import generate_embeddings
-from app.services.search import semantic_search
-from app.services.rag import (
-    retrieve_context,
-    build_prompt,
-)
-from app.services.llm import generate_answer
 from app.services.auth import (
     get_current_user,
     get_db,
 )
-
+from app.services.chunking import chunk_text
+from app.services.embedding import generate_embeddings
+from app.services.llm import generate_answer
+from app.services.rag import (
+    build_prompt,
+    retrieve_context,
+)
+from app.services.search import semantic_search
 
 router = APIRouter(
     prefix="/documents",
