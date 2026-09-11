@@ -261,4 +261,6 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run auth tests
         working-directory: ./backend
+        env:
+          JWT_SECRET_KEY: "test-secret-key-for-ci-only"
         run: pytest tests/test_auth.py -v
