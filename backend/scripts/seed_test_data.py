@@ -6,7 +6,7 @@ a fresh CI database — it creates the schema if missing.
 Usage: python scripts/seed_test_data.py
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
@@ -40,6 +40,9 @@ SEED_DOCUMENTS = [
 
 def seed():
     engine = create_engine(settings.database_url)
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
     Base.metadata.create_all(bind=engine)
 
     SessionLocal = sessionmaker(bind=engine)
