@@ -105,23 +105,44 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
         run: alembic upgrade head   # swap for your actual migration tool
 
-  # ---------------------------------------------------------------------
-  # 3. Ingestion pipeline tests — upload, extraction, chunking
-  # ---------------------------------------------------------------------
-  ingestion:
-    runs-on: ubuntu-latest
-    needs: db-schema
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install dependencies
-        working-directory: ./backend
-        run: pip install -r requirements.txt
-      - name: Run ingestion unit tests
-        working-directory: ./backend
-        run: pytest tests/test_upload.py tests/test_extraction.py tests/test_chunking.py -v
+# ---------------------------------------------------------------------
+# 3. Ingestion pipeline tests — upload, extraction, chunking
+# ---------------------------------------------------------------------
+ingestion:
+  runs-on: ubuntu-latest
+  needs: db-schema
+  services:
+    postgres:
+      image: ankane/pgvector
+      env:
+        POSTGRES_USER: test
+        POSTGRES_PASSWORD: test
+        POSTGRES_DB: kma_test
+      ports:
+        - 5432:5432
+      options: >-
+        --health-cmd "pg_isready -U test"
+        --health-interval 10s
+        --health-timeout 5s
+        --health-retries 5
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - name: Install dependencies
+      working-directory: ./backend
+      run: pip install -r requirements.txt
+    - name: Run migrations
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
+      run: alembic upgrade head
+    - name: Run ingestion unit tests
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
+      run: pytest tests/test_upload.py tests/test_extraction.py tests/test_chunking.py -v
 
   # ---------------------------------------------------------------------
   # 4. Embedding + storage tests
@@ -146,6 +167,11 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: pip install -r requirements.txt
+      - name: Run migrations
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
+        run: alembic upgrade head
       - name: Run embedding + storage tests (mocked embedding calls)
         working-directory: ./backend
         env:
