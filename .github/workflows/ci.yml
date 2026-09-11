@@ -202,6 +202,9 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: pip install -r requirements.txt
+      - name: Run migrations
+        working-directory: ./backend
+        run: alembic upgrade head
       - name: Seed test dataset
         working-directory: ./backend
         env:
@@ -209,8 +212,6 @@ jobs:
         run: python -m scripts.seed_test_data
       - name: Run retrieval tests
         working-directory: ./backend
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
         run: pytest tests/test_retrieval.py -v
 
   # ---------------------------------------------------------------------
