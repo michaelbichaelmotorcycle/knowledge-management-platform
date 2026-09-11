@@ -6,3 +6,4 @@ pgvector
 alembic
 python-multipart
 pydantic-settings
+pytest
