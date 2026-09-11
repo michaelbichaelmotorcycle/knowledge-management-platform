@@ -220,6 +220,20 @@ jobs:
   rag-llm:
     runs-on: ubuntu-latest
     needs: retrieval
+    services:
+      postgres:
+        image: ankane/pgvector
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: kma_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -231,9 +245,9 @@ jobs:
       - name: Run RAG/LLM integration tests (mocked LLM)
         working-directory: ./backend
         env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
           USE_MOCK_LLM: "true"
         run: pytest tests/test_rag_integration.py -v
-
   # ---------------------------------------------------------------------
   # 7. End-to-end smoke test — the two Must-have user stories:
   #    ask a question -> grounded answer with cited sources
