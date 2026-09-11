@@ -13,7 +13,7 @@ Real-API verification is a separate manual step before the Alpha demo
 from unittest.mock import MagicMock, patch
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
@@ -30,10 +30,12 @@ from app.services.rag import build_prompt, retrieve_context
 @pytest.fixture(scope="module")
 def engine():
     engine = create_engine(settings.database_url)
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
-
 
 @pytest.fixture()
 def db(engine):
