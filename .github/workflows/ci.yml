@@ -133,7 +133,7 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         working-directory: ./backend
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt && pip install fastembed pypdf httpx
       - name: Run migrations
         working-directory: ./backend
         env:
