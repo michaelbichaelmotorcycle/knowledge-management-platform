@@ -206,7 +206,7 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
-        run: python scripts/seed_test_data.py
+        run: python -m scripts.seed_test_data
       - name: Run retrieval tests
         working-directory: ./backend
         env:
