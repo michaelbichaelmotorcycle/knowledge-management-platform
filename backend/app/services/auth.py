@@ -1,5 +1,5 @@
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -77,7 +77,7 @@ def create_access_token(
     role: str,
 ) -> str:
     expire = (
-        datetime.now(UTC)
+        datetime.now(timezone.utc)
         + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
