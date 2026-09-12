@@ -403,6 +403,23 @@ button {
   font-size: 0.8rem;
 }
 
+.document-info span {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.document-owner {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 8px;
+  background: #e9eef3;
+  color: #475569;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .delete-button {
   background: #fee2e2;
   color: #b91c1c;
