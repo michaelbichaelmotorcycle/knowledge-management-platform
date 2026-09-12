@@ -728,8 +728,13 @@ function App() {
                       Document ID:{" "}
                       {document.id}
                     </span>
-                  </div>
 
+                    {currentUser.role === "admin" && (
+                      <span className="document-owner">
+                        Owner: {document.owner_username}
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     className="delete-button"

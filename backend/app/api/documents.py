@@ -120,14 +120,25 @@ def list_documents(
         .all()
     )
 
+    owner_ids = [document.owner_id for document in documents]
+    owners = (
+        db.query(User)
+        .filter(User.id.in_(owner_ids))
+        .all()
+    )
+    usernames_by_id = {owner.id: owner.username for owner in owners}
+
     return [
         {
             "id": document.id,
             "filename": document.filename,
+            "owner_id": document.owner_id,
+            "owner_username": usernames_by_id.get(
+                document.owner_id, "Unknown"
+            ),
         }
         for document in documents
     ]
-
 
 @router.delete("/{document_id}")
 def delete_document(
