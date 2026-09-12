@@ -1,3 +1,7 @@
 .venv/
 __pycache__/
 *.pyc
+
+# Local development artifacts
+pgvector/
+test-document.txt
