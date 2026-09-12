@@ -195,7 +195,7 @@ function App() {
     setSessionMessage(
       reason === "expired" ? "Your session expired. Please sign in again." : ""
     );
-    setAuthLoading(false):
+    setAuthLoading(false);
   }
 
   async function authenticatedFetch(
