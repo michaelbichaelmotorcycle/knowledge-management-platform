@@ -181,7 +181,7 @@ function App() {
     }
   }
 
-  function logout() {
+  function logout(reason) {
     localStorage.removeItem(TOKEN_KEY);
 
     setToken(null);
@@ -192,6 +192,10 @@ function App() {
     setSearchError("");
     setUploadMessage("");
     setDocumentsLoading(false);
+    setSessionMessage(
+      reason === "expired" ? "Your session expired. Please sign in again." : ""
+    );
+    setAuthLoading(false):
   }
 
   async function authenticatedFetch(
@@ -509,7 +513,7 @@ function App() {
           <button
             type="button"
             className="logout-button"
-            onClick={logout}
+            onClick={() => logout("manual")}
           >
             Logout
           </button>
