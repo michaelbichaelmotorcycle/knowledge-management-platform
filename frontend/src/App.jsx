@@ -36,11 +36,6 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
 
-  useEffect(() => {
-    checkBackend();
-    initializeAuthentication();
-  }, []);
-
   async function checkBackend() {
     try {
       const response = await fetch(
@@ -96,6 +91,13 @@ function App() {
       setAuthLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkBackend();
+    initializeAuthentication();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleLogin(event) {
     event.preventDefault();
