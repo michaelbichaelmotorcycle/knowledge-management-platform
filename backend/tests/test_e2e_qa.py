@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from google.genai.errors import APIError
 
 from app.main import app
 
@@ -125,8 +126,9 @@ def test_llm_failure_returns_service_unavailable(
     mock_generate_answer,
     auth_headers,
 ):
-    mock_generate_answer.side_effect = Exception(
-        "LLM service unavailable"
+    mock_generate_answer.side_effect = APIError(
+        503,
+        {"message": "LLM service unavailable"},
     )
 
     response = client.get(

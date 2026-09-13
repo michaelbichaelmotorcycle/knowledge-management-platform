@@ -5,6 +5,7 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
+from google.genai.errors import APIError
 from sqlalchemy.orm import Session
 
 from app.models.chunk import DocumentChunk
@@ -221,7 +222,7 @@ def ask_question(
 
     try:
         answer = generate_answer(prompt)
-    except Exception:
+    except APIError:
         raise HTTPException(
             status_code=503,
             detail=(
