@@ -170,3 +170,34 @@ def test_unrelated_query_does_not_match_irrelevant_chunk(db):
 
     result_ids = [r.id for r in results]
     assert chunk.id not in result_ids
+
+def test_semantic_search_respects_result_limit(db):
+    user = make_user(db, "retrieval_limit_user_final")
+
+    make_document_with_chunk(
+        db,
+        user,
+        "vacation_policy_1.txt",
+        "Employees receive 15 days of paid vacation each year.",
+    )
+    make_document_with_chunk(
+        db,
+        user,
+        "vacation_policy_2.txt",
+        "Employees can request vacation days through the HR portal.",
+    )
+    make_document_with_chunk(
+        db,
+        user,
+        "vacation_policy_3.txt",
+        "Unused vacation days may be carried over to the next year.",
+    )
+
+    results = semantic_search(
+        "What is the company vacation policy?",
+        db,
+        user,
+        limit=2,
+    )
+
+    assert len(results) <= 2
