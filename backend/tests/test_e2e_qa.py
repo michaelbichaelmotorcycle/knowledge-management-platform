@@ -144,3 +144,23 @@ def test_llm_failure_returns_service_unavailable(
         "The AI service is temporarily unavailable. "
         "Please try again later."
     )
+
+def test_empty_question_is_rejected(auth_headers):
+    response = client.get(
+        "/documents/ask",
+        params={"question": ""},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_whitespace_question_is_rejected(auth_headers):
+    response = client.get(
+        "/documents/ask",
+        params={"question": "   "},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Question cannot be empty."
