@@ -119,3 +119,26 @@ def test_ask_without_auth_is_rejected():
     )
 
     assert response.status_code in (401, 403)
+
+@patch("app.api.documents.generate_answer")
+def test_llm_failure_returns_service_unavailable(
+    mock_generate_answer,
+    auth_headers,
+):
+    mock_generate_answer.side_effect = Exception(
+        "LLM service unavailable"
+    )
+
+    response = client.get(
+        "/documents/ask",
+        params={
+            "question": "How many vacation days do employees get?"
+        },
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "The AI service is temporarily unavailable. "
+        "Please try again later."
+    )

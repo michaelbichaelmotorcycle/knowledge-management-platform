@@ -219,7 +219,16 @@ def ask_question(
         context,
     )
 
-    answer = generate_answer(prompt)
+    try:
+        answer = generate_answer(prompt)
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The AI service is temporarily unavailable. "
+                "Please try again later."
+            ),
+        )
 
     return {
         "answer": answer,
