@@ -1,10 +1,11 @@
 import os
+
 import pytest
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("USE_MOCK_LLM", "true")
 
-from app.main import app  # noqa: E402
+from app.main import app
 
 
 @pytest.fixture(scope="session")
