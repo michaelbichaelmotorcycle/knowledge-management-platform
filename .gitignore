@@ -5,3 +5,6 @@ __pycache__/
 # Local development artifacts
 pgvector/
 test-document.txt
+.env
+.idea/
+backend/test-hugo.txt
