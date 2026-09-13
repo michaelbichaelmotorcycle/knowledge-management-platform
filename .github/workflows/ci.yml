@@ -103,7 +103,13 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/kma_test
-        run: alembic upgrade head   # swap for your actual migration tool
+        run: |
+          if [ -f alembic.ini ]; then
+            pip install alembic
+            alembic upgrade head
+          else
+            echo "::warning::alembic.ini not found yet (waiting on Task 6 — Database/Infrastructure). Skipping migrations for now."
+          fi
 
   # ---------------------------------------------------------------------
   # 3. Ingestion pipeline tests — upload, extraction, chunking
