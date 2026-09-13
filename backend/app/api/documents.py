@@ -3,8 +3,10 @@ from fastapi import (
     Depends,
     File,
     HTTPException,
+    Query,
     UploadFile,
 )
+from google.genai.errors import APIError
 from sqlalchemy.orm import Session
 
 from app.models.chunk import DocumentChunk
@@ -205,10 +207,16 @@ def search_documents(
 
 @router.get("/ask")
 def ask_question(
-    question: str,
+    question: str = Query(min_length=1),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if not question.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty.",
+        )
+
     context = retrieve_context(
         question,
         db,
@@ -230,7 +238,16 @@ def ask_question(
         context,
     )
 
-    answer = generate_answer(prompt)
+    try:
+        answer = generate_answer(prompt)
+    except APIError:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The AI service is temporarily unavailable. "
+                "Please try again later."
+            ),
+        )
 
     return {
         "answer": answer,
