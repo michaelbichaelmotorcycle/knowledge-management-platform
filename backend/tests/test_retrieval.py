@@ -56,7 +56,7 @@ def make_user(db, username, role="user"):
 
 def make_document_with_chunk(db, owner, filename, content):
     document = Document(
-        filename=filename,
+        title=filename,
         content=content,
         owner_id=owner.id,
     )
@@ -66,7 +66,7 @@ def make_document_with_chunk(db, owner, filename, content):
 
     embedding = generate_embeddings([content])[0]
     chunk = DocumentChunk(
-        document_id=document.id,
+        doc_id=document.doc_id,
         content=content,
         embedding=embedding,
     )
@@ -92,8 +92,8 @@ def test_relevant_chunk_returned_for_matching_query(db):
         limit=5,
     )
 
-    result_ids = [r.id for r in results]
-    assert chunk.id in result_ids
+    result_ids = [r.chunk_id for r in results]
+    assert chunk.chunk_id in result_ids
 
 
 def test_regular_user_only_sees_own_documents(db):
@@ -120,12 +120,12 @@ def test_regular_user_only_sees_own_documents(db):
         limit=10,
     )
 
-    result_ids = [r.id for r in results]
-    assert alice_chunk.id in result_ids
+    result_ids = [r.chunk_id for r in results]
+    assert alice_chunk.chunk_id in result_ids
     for result in results:
         owning_document = (
             db.query(Document)
-            .filter(Document.id == result.document_id)
+            .filter(Document.doc_id == result.doc_id)
             .first()
         )
         assert owning_document.owner_id == alice.id
@@ -148,8 +148,8 @@ def test_admin_sees_all_documents(db):
         limit=10,
     )
 
-    result_ids = [r.id for r in results]
-    assert other_chunk.id in result_ids
+    result_ids = [r.chunk_id for r in results]
+    assert other_chunk.chunk_id in result_ids
 
 
 def test_unrelated_query_does_not_match_irrelevant_chunk(db):
@@ -168,5 +168,5 @@ def test_unrelated_query_does_not_match_irrelevant_chunk(db):
         limit=5,
     )
 
-    result_ids = [r.id for r in results]
-    assert chunk.id not in result_ids
+    result_ids = [r.chunk_id for r in results]
+    assert chunk.chunk_id not in result_ids

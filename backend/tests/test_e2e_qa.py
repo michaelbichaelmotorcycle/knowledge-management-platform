@@ -45,12 +45,12 @@ def auth_headers():
 REPRESENTATIVE_QUESTIONS = [
     {
         "question": "How many vacation days do employees get per year?",
-        "expected_filename": "vacation_policy.txt",
+        "expected_title": "vacation_policy.txt",
         "mocked_answer": "Employees receive 15 days of paid vacation per year.",
     },
     {
         "question": "What does the onboarding checklist include?",
-        "expected_filename": "onboarding_checklist.txt",
+        "expected_title": "onboarding_checklist.txt",
         "mocked_answer": (
             "The onboarding checklist includes laptop setup, badge "
             "issuance, and benefits enrollment."
@@ -58,7 +58,7 @@ REPRESENTATIVE_QUESTIONS = [
     },
     {
         "question": "When does the quarterly budget review happen?",
-        "expected_filename": "budget_review.txt",
+        "expected_title": "budget_review.txt",
         "mocked_answer": (
             "The quarterly budget review happens every March, June, "
             "September, and December."
@@ -88,8 +88,8 @@ def test_representative_question_returns_grounded_answer_with_source(
     assert data["answer"] == case["mocked_answer"]
     assert len(data["sources"]) > 0
 
-    source_filenames = [s["document"] for s in data["sources"]]
-    assert case["expected_filename"] in source_filenames
+    source_titles = [s["title"] for s in data["sources"]]
+    assert case["expected_title"] in source_titles
 
 
 @patch("app.services.llm.client")
