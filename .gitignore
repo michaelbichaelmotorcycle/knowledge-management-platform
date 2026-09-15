@@ -2,4 +2,10 @@
 __pycache__/
 *.pyc
 .DS_Store
-git add .gitignore
+
+# Local development artifacts
+pgvector/
+test-document.txt
+.env
+.idea/
+backend/test-hugo.txt
