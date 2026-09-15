@@ -5,8 +5,8 @@ These tests use a real database connection (settings.database_url) and
 real embeddings from the local embedding model — no mocking needed here,
 since embedding generation is local/free, unlike the LLM call in rag-llm.
 
-Each test creates its own isolated data and cleans up after itself so
-tests can run in any order without interfering with each other.
+Each test creates uniquely named test data to avoid conflicts between
+test runs.
 """
 
 import pytest
@@ -200,4 +200,4 @@ def test_semantic_search_respects_result_limit(db):
         limit=2,
     )
 
-    assert len(results) <= 2
+    assert len(results) == 2
