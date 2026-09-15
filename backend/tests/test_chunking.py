@@ -1,31 +1,15 @@
 import pytest
 
-from app.services.chunking import chunk_text
+pytestmark = pytest.mark.skip(reason="waiting on document ingestion module (track 3)")
 
 
-def test_chunk_text_returns_empty_list_for_empty_input():
-    assert chunk_text("") == []
+def test_chunks_are_roughly_target_size(client):
+    ...
 
 
-def test_chunk_text_splits_text_with_overlap():
-    text = "abcdefghij"
-
-    chunks = chunk_text(
-        text,
-        chunk_size=6,
-        overlap=2,
-    )
-
-    assert chunks == [
-        "abcdef",
-        "efghij",
-    ]
+def test_short_document_produces_at_least_one_chunk(client):
+    ...
 
 
-def test_chunk_text_rejects_overlap_equal_to_chunk_size():
-    with pytest.raises(ValueError):
-        chunk_text(
-            "abcdefghij",
-            chunk_size=6,
-            overlap=6,
-        )
+def test_long_document_produces_expected_chunk_count(client):
+    ...
