@@ -22,18 +22,18 @@ def retrieve_context(
         return []
 
     document_ids = [
-        result.document_id
+        result.doc_id
         for result in results
     ]
 
     documents = (
         db.query(Document)
-        .filter(Document.id.in_(document_ids))
+        .filter(Document.doc_id.in_(document_ids))
         .all()
     )
 
     documents_by_id = {
-        document.id: document
+        document.doc_id: document
         for document in documents
     }
 
@@ -41,15 +41,15 @@ def retrieve_context(
 
     for result in results:
         document = documents_by_id.get(
-            result.document_id
+            result.doc_id
         )
 
         context.append(
             {
                 "content": result.content,
-                "document_id": result.document_id,
-                "filename": (
-                    document.filename
+                "doc_id": result.doc_id,
+                "title": (
+                    document.title
                     if document
                     else "Unknown document"
                 ),

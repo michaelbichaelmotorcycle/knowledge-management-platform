@@ -7,7 +7,7 @@ from app.db.database import Base
 class DocumentChunk(Base):
     __tablename__ = "document_chunks"
 
-    id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
+    chunk_id = Column(Integer, primary_key=True, index=True)
+    doc_id = Column(Integer, ForeignKey("documents.doc_id"), nullable=False)
     content = Column(Text, nullable=False)
     embedding = Column(Vector(384), nullable=True)
