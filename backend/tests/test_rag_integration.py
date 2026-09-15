@@ -61,7 +61,7 @@ def make_user(db, username, role="user"):
 
 def make_document_with_chunk(db, owner, filename, content):
     document = Document(
-        filename=filename,
+        title=filename,
         content=content,
         owner_id=owner.id,
     )
@@ -71,7 +71,7 @@ def make_document_with_chunk(db, owner, filename, content):
 
     embedding = generate_embeddings([content])[0]
     chunk = DocumentChunk(
-        document_id=document.id,
+        doc_id=document.doc_id,
         content=content,
         embedding=embedding,
     )
@@ -89,8 +89,8 @@ def test_build_prompt_includes_context_and_question():
     context = [
         {
             "content": "Employees get 15 vacation days per year.",
-            "document_id": 1,
-            "filename": "vacation_policy.txt",
+            "doc_id": 1,
+            "title": "vacation_policy.txt",
         }
     ]
 
@@ -132,9 +132,9 @@ def test_retrieve_context_attaches_filename(db):
     )
 
     assert len(context) > 0
-    matching = [c for c in context if c["document_id"] == chunk.document_id]
+    matching = [c for c in context if c["doc_id"] == chunk.doc_id]
     assert matching
-    assert matching[0]["filename"] == "remote_work_policy.txt"
+    assert matching[0]["title"] == "remote_work_policy.txt"
 
 
 def test_retrieve_context_returns_empty_list_when_no_match(db):

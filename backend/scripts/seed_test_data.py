@@ -21,17 +21,17 @@ from app.services.embedding import generate_embeddings
 # used by CI tests and the ~8-10 representative question set (NFR-12).
 SEED_DOCUMENTS = [
     {
-        "filename": "vacation_policy.txt",
+        "title": "vacation_policy.txt",
         "content": "Employees receive 15 days of paid vacation per year, "
         "accrued monthly starting on their hire date.",
     },
     {
-        "filename": "onboarding_checklist.txt",
+        "title": "onboarding_checklist.txt",
         "content": "New hires complete a checklist that includes laptop "
         "setup, badge issuance, and benefits enrollment within the first week.",
     },
     {
-        "filename": "budget_review.txt",
+        "title": "budget_review.txt",
         "content": "The quarterly budget review takes place every March, "
         "June, September, and December, led by the finance team.",
     },
@@ -61,7 +61,7 @@ def seed():
 
         for doc_data in SEED_DOCUMENTS:
             document = Document(
-                filename=doc_data["filename"],
+                title=doc_data["title"],
                 content=doc_data["content"],
                 owner_id=admin.id,
             )
@@ -71,7 +71,7 @@ def seed():
 
             embedding = generate_embeddings([doc_data["content"]])[0]
             chunk = DocumentChunk(
-                document_id=document.id,
+                doc_id=document.doc_id,
                 content=doc_data["content"],
                 embedding=embedding,
             )

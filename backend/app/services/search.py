@@ -24,7 +24,7 @@ def semantic_search(
         db.query(DocumentChunk)
         .join(
             Document,
-            DocumentChunk.document_id == Document.id,
+            DocumentChunk.doc_id == Document.doc_id,
         )
         .filter(DocumentChunk.embedding.isnot(None))
         .filter(distance <= MAX_DISTANCE)

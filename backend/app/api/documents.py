@@ -3,8 +3,10 @@ from fastapi import (
     Depends,
     File,
     HTTPException,
+    Query,
     UploadFile,
 )
+from google.genai.errors import APIError
 from sqlalchemy.orm import Session
 
 from app.models.chunk import DocumentChunk
@@ -67,36 +69,53 @@ async def upload_document(
             detail="Only .txt and .pdf files are supported",
         )
 
+    if not text_content.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded document contains no extractable text",
+        )
+
     document = Document(
-        filename=file.filename,
+        title=file.filename,
         content=text_content,
         owner_id=current_user.id,
     )
 
-    db.add(document)
-    db.commit()
-    db.refresh(document)
+    try:
+        db.add(document)
+        db.flush()
 
-    chunks = chunk_text(text_content)
-    embeddings = generate_embeddings(chunks)
+        chunks = chunk_text(text_content)
+        embeddings = generate_embeddings(chunks)
 
-    for chunk, embedding in zip(
-        chunks,
-        embeddings,
-    ):
-        document_chunk = DocumentChunk(
-            document_id=document.id,
-            content=chunk,
-            embedding=embedding,
-        )
+        if len(chunks) != len(embeddings):
+            raise ValueError(
+                "The number of embeddings does not match "
+                "the number of chunks"
+            )
 
-        db.add(document_chunk)
+        for chunk, embedding in zip(
+            chunks,
+            embeddings,
+        ):
+            document_chunk = DocumentChunk(
+                doc_id=document.doc_id,
+                content=chunk,
+                embedding=embedding,
+            )
 
-    db.commit()
+            db.add(document_chunk)
+
+        db.commit()
+        db.refresh(document)
+
+    except Exception:
+        db.rollback()
+        raise
 
     return {
-        "id": document.id,
-        "filename": document.filename,
+        "doc_id": document.doc_id,
+        "title": document.title,
         "chunks_created": len(chunks),
         "message": "Document uploaded successfully",
     }
@@ -116,7 +135,7 @@ def list_documents(
 
     documents = (
         query
-        .order_by(Document.id.desc())
+        .order_by(Document.doc_id.desc())
         .all()
     )
 
@@ -130,8 +149,8 @@ def list_documents(
 
     return [
         {
-            "id": document.id,
-            "filename": document.filename,
+            "doc_id": document.doc_id,
+            "title": document.title,
             "owner_id": document.owner_id,
             "owner_username": usernames_by_id.get(
                 document.owner_id, "Unknown"
@@ -139,6 +158,7 @@ def list_documents(
         }
         for document in documents
     ]
+
 
 @router.delete("/{document_id}")
 def delete_document(
@@ -148,7 +168,7 @@ def delete_document(
 ):
     query = (
         db.query(Document)
-        .filter(Document.id == document_id)
+        .filter(Document.doc_id == document_id)
     )
 
     if current_user.role != "admin":
@@ -165,7 +185,7 @@ def delete_document(
         )
 
     db.query(DocumentChunk).filter(
-        DocumentChunk.document_id == document_id
+        DocumentChunk.doc_id == document_id
     ).delete(
         synchronize_session=False
     )
@@ -175,7 +195,7 @@ def delete_document(
 
     return {
         "message": "Document deleted successfully",
-        "id": document_id,
+        "doc_id": document_id,
     }
 
 
@@ -195,8 +215,8 @@ def search_documents(
 
     return [
         {
-            "chunk_id": result.id,
-            "document_id": result.document_id,
+            "chunk_id": result.chunk_id,
+            "doc_id": result.doc_id,
             "content": result.content,
         }
         for result in results
@@ -205,10 +225,19 @@ def search_documents(
 
 @router.get("/ask")
 def ask_question(
-    question: str,
+    question: str = Query(
+        min_length=1,
+        max_length=2000,
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if not question.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty.",
+        )
+
     context = retrieve_context(
         question,
         db,
@@ -230,14 +259,23 @@ def ask_question(
         context,
     )
 
-    answer = generate_answer(prompt)
+    try:
+        answer = generate_answer(prompt)
+    except APIError:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The AI service is temporarily unavailable. "
+                "Please try again later."
+            ),
+        )
 
     return {
         "answer": answer,
         "sources": [
             {
-                "document_id": item["document_id"],
-                "document": item["filename"],
+                "doc_id": item["doc_id"],
+                "title": item["title"],
                 "content": item["content"],
             }
             for item in context

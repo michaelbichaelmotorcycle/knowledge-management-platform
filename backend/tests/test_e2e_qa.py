@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from google.genai.errors import APIError
 
 from app.main import app
 
@@ -45,12 +46,12 @@ def auth_headers():
 REPRESENTATIVE_QUESTIONS = [
     {
         "question": "How many vacation days do employees get per year?",
-        "expected_filename": "vacation_policy.txt",
+        "expected_title": "vacation_policy.txt",
         "mocked_answer": "Employees receive 15 days of paid vacation per year.",
     },
     {
         "question": "What does the onboarding checklist include?",
-        "expected_filename": "onboarding_checklist.txt",
+        "expected_title": "onboarding_checklist.txt",
         "mocked_answer": (
             "The onboarding checklist includes laptop setup, badge "
             "issuance, and benefits enrollment."
@@ -58,7 +59,7 @@ REPRESENTATIVE_QUESTIONS = [
     },
     {
         "question": "When does the quarterly budget review happen?",
-        "expected_filename": "budget_review.txt",
+        "expected_title": "budget_review.txt",
         "mocked_answer": (
             "The quarterly budget review happens every March, June, "
             "September, and December."
@@ -88,8 +89,8 @@ def test_representative_question_returns_grounded_answer_with_source(
     assert data["answer"] == case["mocked_answer"]
     assert len(data["sources"]) > 0
 
-    source_filenames = [s["document"] for s in data["sources"]]
-    assert case["expected_filename"] in source_filenames
+    source_titles = [s["title"] for s in data["sources"]]
+    assert case["expected_title"] in source_titles
 
 
 @patch("app.services.llm.client")
@@ -119,3 +120,56 @@ def test_ask_without_auth_is_rejected():
     )
 
     assert response.status_code in (401, 403)
+
+@patch("app.api.documents.generate_answer")
+def test_llm_failure_returns_service_unavailable(
+    mock_generate_answer,
+    auth_headers,
+):
+    mock_generate_answer.side_effect = APIError(
+        503,
+        {"message": "LLM service unavailable"},
+    )
+
+    response = client.get(
+        "/documents/ask",
+        params={
+            "question": "How many vacation days do employees get?"
+        },
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "The AI service is temporarily unavailable. "
+        "Please try again later."
+    )
+
+def test_empty_question_is_rejected(auth_headers):
+    response = client.get(
+        "/documents/ask",
+        params={"question": ""},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_whitespace_question_is_rejected(auth_headers):
+    response = client.get(
+        "/documents/ask",
+        params={"question": "   "},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Question cannot be empty."
+
+def test_question_over_max_length_is_rejected(auth_headers):
+    response = client.get(
+        "/documents/ask",
+        params={"question": "a" * 2001},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422

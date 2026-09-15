@@ -6,13 +6,13 @@ from app.db.database import Base
 class Document(Base):
     __tablename__ = "documents"
 
-    id = Column(
+    doc_id = Column(
         Integer,
         primary_key=True,
         index=True,
     )
 
-    filename = Column(
+    title = Column(
         String(255),
         nullable=False,
     )
