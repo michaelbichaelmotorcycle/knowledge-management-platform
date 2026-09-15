@@ -19,7 +19,7 @@ def test_document_chunk_stores_and_retrieves_embedding():
         db.refresh(user)
 
         document = Document(
-            title="storage-test.txt",
+            filename="storage-test.txt",
             content="Test document content.",
             owner_id=user.id,
         )
@@ -30,7 +30,7 @@ def test_document_chunk_stores_and_retrieves_embedding():
         embedding = [0.1] * 384
 
         chunk = DocumentChunk(
-            doc_id=document.doc_id,
+            document_id=document.id,
             content="Test chunk content.",
             embedding=embedding,
         )
@@ -40,13 +40,13 @@ def test_document_chunk_stores_and_retrieves_embedding():
 
         stored_chunk = (
             db.query(DocumentChunk)
-            .filter(DocumentChunk.chunk_id == chunk.chunk_id)
+            .filter(DocumentChunk.id == chunk.id)
             .first()
         )
 
         assert stored_chunk is not None
         assert stored_chunk.content == "Test chunk content."
-        assert stored_chunk.doc_id == document.doc_id
+        assert stored_chunk.document_id == document.id
         assert len(stored_chunk.embedding) == 384
 
         for actual, expected in zip(
