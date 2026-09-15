@@ -7,6 +7,8 @@ os.environ.setdefault("USE_MOCK_LLM", "true")
 
 from app.main import app
 
+TEST_USER = {"username": "testuser", "password": "testpass"}
+
 
 @pytest.fixture(scope="session")
 def client():
@@ -14,15 +16,27 @@ def client():
 
 
 @pytest.fixture
+def auth_token(client):
+    """Valid JWT for the seeded test user."""
+    response = client.post("/auth/token", data=TEST_USER)
+    assert response.status_code == 200, f"login failed: {response.text}"
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def auth_headers(auth_token):
+    return {"Authorization": f"Bearer {auth_token}"}
+
+
+@pytest.fixture
 def mock_llm_response():
-    """Canned LLM response used whenever USE_MOCK_LLM=true."""
     return {
         "answer": "This is a mocked answer for testing purposes.",
-        "sources": [{"chunk_id": "test-chunk-1", "score": 0.92}],
+        "sources": [{"document_id": 1, "document": "test.txt", "content": "..."}],
     }
 
 
 @pytest.fixture
 def mock_embedding():
-    """Deterministic fake embedding vector (match your pgvector column dim)."""
-    return [0.01] * 1536
+    """Deterministic fake embedding — matches Vector(384) column."""
+    return [0.01] * 384
