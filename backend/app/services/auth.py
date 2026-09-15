@@ -69,6 +69,9 @@ def authenticate_user(
     ):
         return None
 
+    if user.disabled:
+        return None
+
     return user
 
 
