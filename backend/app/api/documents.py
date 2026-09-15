@@ -3,8 +3,10 @@ from fastapi import (
     Depends,
     File,
     HTTPException,
+    Query,
     UploadFile,
 )
+from google.genai.errors import APIError
 from sqlalchemy.orm import Session
 
 from app.models.chunk import DocumentChunk
@@ -67,32 +69,49 @@ async def upload_document(
             detail="Only .txt and .pdf files are supported",
         )
 
+    if not text_content.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded document contains no extractable text",
+        )
+
     document = Document(
         title=file.filename,
         content=text_content,
         owner_id=current_user.id,
     )
 
-    db.add(document)
-    db.commit()
-    db.refresh(document)
+    try:
+        db.add(document)
+        db.flush()
 
-    chunks = chunk_text(text_content)
-    embeddings = generate_embeddings(chunks)
+        chunks = chunk_text(text_content)
+        embeddings = generate_embeddings(chunks)
 
-    for chunk, embedding in zip(
-        chunks,
-        embeddings,
-    ):
-        document_chunk = DocumentChunk(
-            doc_id=document.doc_id,
-            content=chunk,
-            embedding=embedding,
-        )
+        if len(chunks) != len(embeddings):
+            raise ValueError(
+                "The number of embeddings does not match "
+                "the number of chunks"
+            )
 
-        db.add(document_chunk)
+        for chunk, embedding in zip(
+            chunks,
+            embeddings,
+        ):
+            document_chunk = DocumentChunk(
+                doc_id=document.doc_id,
+                content=chunk,
+                embedding=embedding,
+            )
 
-    db.commit()
+            db.add(document_chunk)
+
+        db.commit()
+        db.refresh(document)
+
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         "doc_id": document.doc_id,
@@ -139,6 +158,7 @@ def list_documents(
         }
         for document in documents
     ]
+
 
 @router.delete("/{document_id}")
 def delete_document(
@@ -205,10 +225,19 @@ def search_documents(
 
 @router.get("/ask")
 def ask_question(
-    question: str,
+    question: str = Query(
+        min_length=1,
+        max_length=2000,
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if not question.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty.",
+        )
+
     context = retrieve_context(
         question,
         db,
@@ -230,7 +259,16 @@ def ask_question(
         context,
     )
 
-    answer = generate_answer(prompt)
+    try:
+        answer = generate_answer(prompt)
+    except APIError:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The AI service is temporarily unavailable. "
+                "Please try again later."
+            ),
+        )
 
     return {
         "answer": answer,
