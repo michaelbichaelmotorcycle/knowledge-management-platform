@@ -69,32 +69,49 @@ async def upload_document(
             detail="Only .txt and .pdf files are supported",
         )
 
+    if not text_content.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded document contains no extractable text",
+        )
+
     document = Document(
         filename=file.filename,
         content=text_content,
         owner_id=current_user.id,
     )
 
-    db.add(document)
-    db.commit()
-    db.refresh(document)
+    try:
+        db.add(document)
+        db.flush()
 
-    chunks = chunk_text(text_content)
-    embeddings = generate_embeddings(chunks)
+        chunks = chunk_text(text_content)
+        embeddings = generate_embeddings(chunks)
 
-    for chunk, embedding in zip(
-        chunks,
-        embeddings,
-    ):
-        document_chunk = DocumentChunk(
-            document_id=document.id,
-            content=chunk,
-            embedding=embedding,
-        )
+        if len(chunks) != len(embeddings):
+            raise ValueError(
+                "The number of embeddings does not match "
+                "the number of chunks"
+            )
 
-        db.add(document_chunk)
+        for chunk, embedding in zip(
+            chunks,
+            embeddings,
+        ):
+            document_chunk = DocumentChunk(
+                document_id=document.id,
+                content=chunk,
+                embedding=embedding,
+            )
 
-    db.commit()
+            db.add(document_chunk)
+
+        db.commit()
+        db.refresh(document)
+
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         "id": document.id,
