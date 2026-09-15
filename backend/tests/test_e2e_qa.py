@@ -164,3 +164,12 @@ def test_whitespace_question_is_rejected(auth_headers):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Question cannot be empty."
+
+def test_question_over_max_length_is_rejected(auth_headers):
+    response = client.get(
+        "/documents/ask",
+        params={"question": "a" * 2001},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
