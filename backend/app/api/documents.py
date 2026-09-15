@@ -224,7 +224,10 @@ def search_documents(
 
 @router.get("/ask")
 def ask_question(
-    question: str = Query(min_length=1),
+        question: str = Query(
+            min_length=1,
+            max_length=2000,
+        ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
