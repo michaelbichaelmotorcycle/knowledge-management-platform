@@ -1,29 +1,87 @@
 """
-Seeds the test database with a small fixed dataset so retrieval/e2e tests
-are deterministic.
+Seeds a small, known dataset into the database for CI integration tests
+(retrieval, rag-llm, e2e-smoke jobs). Safe to run multiple times against
+a fresh CI database — it creates the schema if missing.
 
-Usage:
-    DATABASE_URL=postgresql://test:test@localhost:5432/kma_test python scripts/seed_test_data.py
+Usage: python scripts/seed_test_data.py
 """
-import os
-import sys
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    print("DATABASE_URL not set", file=sys.stderr)
-    sys.exit(1)
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-# TODO(track 3/5): replace with real SQLAlchemy inserts once
-# backend/app/models/document.py and chunk.py exist.
+from app.core.config import settings
+from app.db.database import Base
+from app.models.chunk import DocumentChunk
+from app.models.document import Document
+from app.models.user import User
+from app.services.auth import get_password_hash
+from app.services.embedding import generate_embeddings
+
+# A small set of representative documents covering distinct topics,
+# used by CI tests and the ~8-10 representative question set (NFR-12).
 SEED_DOCUMENTS = [
-    {"title": "Employee Handbook", "content": "Employees get 15 days PTO per year."},
-    {"title": "IT Security Policy", "content": "Passwords rotate every 90 days, 12+ chars."},
+    {
+        "filename": "vacation_policy.txt",
+        "content": "Employees receive 15 days of paid vacation per year, "
+        "accrued monthly starting on their hire date.",
+    },
+    {
+        "filename": "onboarding_checklist.txt",
+        "content": "New hires complete a checklist that includes laptop "
+        "setup, badge issuance, and benefits enrollment within the first week.",
+    },
+    {
+        "filename": "budget_review.txt",
+        "content": "The quarterly budget review takes place every March, "
+        "June, September, and December, led by the finance team.",
+    },
 ]
 
 
-def main():
-    print(f"[seed] would seed {len(SEED_DOCUMENTS)} documents into {DATABASE_URL}")
+def seed():
+    engine = create_engine(settings.database_url)
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+    Base.metadata.create_all(bind=engine)
+
+    SessionLocal = sessionmaker(bind=engine)
+    db = SessionLocal()
+
+    try:
+        admin = User(
+            username="ci_admin",
+            hashed_password=get_password_hash("ci-test-password"),
+            role="admin",
+            disabled=False,
+        )
+        db.add(admin)
+        db.commit()
+        db.refresh(admin)
+
+        for doc_data in SEED_DOCUMENTS:
+            document = Document(
+                filename=doc_data["filename"],
+                content=doc_data["content"],
+                owner_id=admin.id,
+            )
+            db.add(document)
+            db.commit()
+            db.refresh(document)
+
+            embedding = generate_embeddings([doc_data["content"]])[0]
+            chunk = DocumentChunk(
+                document_id=document.id,
+                content=doc_data["content"],
+                embedding=embedding,
+            )
+            db.add(chunk)
+            db.commit()
+
+        print(f"Seeded {len(SEED_DOCUMENTS)} documents for CI testing.")
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":
-    main()
+    seed()
