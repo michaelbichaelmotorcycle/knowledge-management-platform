@@ -28,12 +28,7 @@ def test_password_hash_and_verify():
 
 def test_create_access_token_contains_expected_claims():
     token = create_access_token("testuser", "user")
-
-    payload = jwt.decode(
-        token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM],
-    )
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
     assert payload["sub"] == "testuser"
     assert payload["role"] == "user"
@@ -42,24 +37,14 @@ def test_create_access_token_contains_expected_claims():
 
 def test_create_access_token_has_future_expiration():
     token = create_access_token("testuser", "user")
-
-    payload = jwt.decode(
-        token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM],
-    )
-
-    expiration = datetime.fromtimestamp(
-        payload["exp"],
-        tz=timezone.utc,
-    )
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    expiration = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
 
     assert expiration > datetime.now(timezone.utc)
 
 
 def test_login_returns_bearer_token_for_valid_credentials():
     mock_db = MagicMock()
-
     user = User(
         id=1,
         username="auth_test_user",
@@ -67,38 +52,28 @@ def test_login_returns_bearer_token_for_valid_credentials():
         role="user",
         disabled=False,
     )
-
     mock_db.query.return_value.filter.return_value.first.return_value = user
 
     def override_get_db():
         yield mock_db
 
     app.dependency_overrides[get_db] = override_get_db
-
     try:
         with TestClient(app) as client:
             response = client.post(
                 "/auth/token",
-                data={
-                    "username": "auth_test_user",
-                    "password": "correct-password",
-                },
+                data={"username": "auth_test_user", "password": "correct-password"},
             )
-
         assert response.status_code == 200
-
         data = response.json()
-
         assert "access_token" in data
         assert data["token_type"] == "bearer"
-
     finally:
         app.dependency_overrides.clear()
 
 
 def test_login_rejects_invalid_password():
     mock_db = MagicMock()
-
     user = User(
         id=1,
         username="auth_test_user",
@@ -106,29 +81,20 @@ def test_login_rejects_invalid_password():
         role="user",
         disabled=False,
     )
-
     mock_db.query.return_value.filter.return_value.first.return_value = user
 
     def override_get_db():
         yield mock_db
 
     app.dependency_overrides[get_db] = override_get_db
-
     try:
         with TestClient(app) as client:
             response = client.post(
                 "/auth/token",
-                data={
-                    "username": "auth_test_user",
-                    "password": "wrong-password",
-                },
+                data={"username": "auth_test_user", "password": "wrong-password"},
             )
-
         assert response.status_code == 401
-        assert response.json()["detail"] == (
-            "Incorrect username or password"
-        )
-
+        assert response.json()["detail"] == "Incorrect username or password"
     finally:
         app.dependency_overrides.clear()
 
@@ -136,13 +102,50 @@ def test_login_rejects_invalid_password():
 def test_auth_me_requires_token():
     with TestClient(app) as client:
         response = client.get("/auth/me")
-
     assert response.status_code == 401
+
+
+def test_invalid_token_rejected():
+    with TestClient(app) as client:
+        response = client.get(
+            "/auth/me", headers={"Authorization": "Bearer garbage"}
+        )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Could not validate credentials"
+
+
+def test_me_returns_current_user_for_valid_token():
+    mock_db = MagicMock()
+    user = User(
+        id=3,
+        username="me_test_user",
+        hashed_password=get_password_hash("correct-password"),
+        role="user",
+        disabled=False,
+    )
+    mock_db.query.return_value.filter.return_value.first.return_value = user
+
+    def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    token = create_access_token(user.username, user.role)
+    try:
+        with TestClient(app) as client:
+            response = client.get(
+                "/auth/me",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        assert response.status_code == 200
+        body = response.json()
+        assert {"id", "username", "role", "disabled"} <= body.keys()
+        assert body["disabled"] is False
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_disabled_user_cannot_authenticate():
     mock_db = MagicMock()
-
     user = User(
         id=2,
         username="disabled_user",
@@ -150,13 +153,8 @@ def test_disabled_user_cannot_authenticate():
         role="user",
         disabled=True,
     )
-
     mock_db.query.return_value.filter.return_value.first.return_value = user
 
-    result = authenticate_user(
-        mock_db,
-        "disabled_user",
-        "correct-password",
-    )
+    result = authenticate_user(mock_db, "disabled_user", "correct-password")
 
     assert result is None
