@@ -76,7 +76,7 @@ async def upload_document(
         )
 
     document = Document(
-        title=file.filename,
+        filename=file.filename,
         content=text_content,
         owner_id=current_user.id,
     )
@@ -99,7 +99,7 @@ async def upload_document(
             embeddings,
         ):
             document_chunk = DocumentChunk(
-                doc_id=document.doc_id,
+                document_id=document.id,
                 content=chunk,
                 embedding=embedding,
             )
@@ -114,8 +114,8 @@ async def upload_document(
         raise
 
     return {
-        "doc_id": document.doc_id,
-        "title": document.title,
+        "id": document.id,
+        "filename": document.filename,
         "chunks_created": len(chunks),
         "message": "Document uploaded successfully",
     }
@@ -135,7 +135,7 @@ def list_documents(
 
     documents = (
         query
-        .order_by(Document.doc_id.desc())
+        .order_by(Document.id.desc())
         .all()
     )
 
@@ -149,8 +149,8 @@ def list_documents(
 
     return [
         {
-            "doc_id": document.doc_id,
-            "title": document.title,
+            "id": document.id,
+            "filename": document.filename,
             "owner_id": document.owner_id,
             "owner_username": usernames_by_id.get(
                 document.owner_id, "Unknown"
@@ -168,7 +168,7 @@ def delete_document(
 ):
     query = (
         db.query(Document)
-        .filter(Document.doc_id == document_id)
+        .filter(Document.id == document_id)
     )
 
     if current_user.role != "admin":
@@ -185,7 +185,7 @@ def delete_document(
         )
 
     db.query(DocumentChunk).filter(
-        DocumentChunk.doc_id == document_id
+        DocumentChunk.document_id == document_id
     ).delete(
         synchronize_session=False
     )
@@ -195,7 +195,7 @@ def delete_document(
 
     return {
         "message": "Document deleted successfully",
-        "doc_id": document_id,
+        "id": document_id,
     }
 
 
@@ -215,8 +215,8 @@ def search_documents(
 
     return [
         {
-            "chunk_id": result.chunk_id,
-            "doc_id": result.doc_id,
+            "chunk_id": result.id,
+            "document_id": result.document_id,
             "content": result.content,
         }
         for result in results
@@ -274,8 +274,8 @@ def ask_question(
         "answer": answer,
         "sources": [
             {
-                "doc_id": item["doc_id"],
-                "title": item["title"],
+                "document_id": item["document_id"],
+                "document": item["filename"],
                 "content": item["content"],
             }
             for item in context

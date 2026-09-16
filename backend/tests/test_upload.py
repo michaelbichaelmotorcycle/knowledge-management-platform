@@ -47,7 +47,7 @@ def test_upload_txt_file_successfully():
             assert response.status_code == 200
 
             data = response.json()
-            assert data["title"] == "test.txt"
+            assert data["filename"] == "test.txt"
             assert data["chunks_created"] == 2
             assert data["message"] == "Document uploaded successfully"
 
