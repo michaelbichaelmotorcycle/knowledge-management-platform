@@ -13,7 +13,3 @@ fastembed
 pypdf
 httpx2
 google-genai
-fastembed
-pypdf
-httpx2
-google-genai
