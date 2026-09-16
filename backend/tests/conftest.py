@@ -7,25 +7,10 @@ os.environ.setdefault("USE_MOCK_LLM", "true")
 
 from app.main import app
 
-TEST_USER = {"username": "testuser", "password": "testpass"}
-
 
 @pytest.fixture(scope="session")
 def client():
     return TestClient(app)
-
-
-@pytest.fixture
-def auth_token(client):
-    """Valid JWT for the seeded test user."""
-    response = client.post("/auth/token", data=TEST_USER)
-    assert response.status_code == 200, f"login failed: {response.text}"
-    return response.json()["access_token"]
-
-
-@pytest.fixture
-def auth_headers(auth_token):
-    return {"Authorization": f"Bearer {auth_token}"}
 
 
 @pytest.fixture
