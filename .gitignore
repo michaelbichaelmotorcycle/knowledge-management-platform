@@ -1,11 +1,35 @@
-.venv/
+# Python
 __pycache__/
-*.pyc
-.DS_Store
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local Python environment/version files
+.python-version
+.venv/
+venv/
+env/
 
 # Local development artifacts
 pgvector/
-test-document.txt
+
+# Environment files and secrets
 .env
+.env.*
+!.env.example
+
+# OS/editor files
+.DS_Store
 .idea/
-backend/test-hugo.txt
+.vscode/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+
+# Logs
+*.log
